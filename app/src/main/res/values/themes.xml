@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base application theme using Material 3 -->
+    <style name="Theme.CreditScoreApp" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Note: Actual theming is handled by Jetpack Compose Material 3 theme -->
+    </style>
+</resources>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Score Retriever</string>
+    <string name="credit_score_label">Your credit score is</string>
+    <string name="out_of_max_score">out of %d</string>
+    <string name="loading_credit_score">Loading credit score...</string>
+    <string name="error_oops">Oops!</string>
+    <string name="retry">Retry</string>
+    <string name="component_type">Component Type:</string>
+    <string name="placeholder_note">Note: Only Placeholder is implemented in Phase 1</string>
+
+    <!-- Error messages -->
+    <string name="error_network">Network error. Please check your connection.</string>
+    <string name="error_server">Server error. Please try again later.</string>
+    <string name="error_data_format">Data format error. Please try again.</string>
+    <string name="error_invalid_data">Invalid data received: %s</string>
+    <string name="error_unexpected">An unexpected error occurred: %s</string>
+
+    <!-- Validation error messages -->
+    <string name="error_validation_max_score">Max score must be greater than 0</string>
+    <string name="error_validation_score_negative">Score must be non-negative</string>
+    <string name="error_validation_score_exceeds">Score cannot exceed max score</string>
+
+    <!-- Component type display names -->
+    <string name="component_placeholder">Placeholder</string>
+    <string name="component_2d_donut">2D Donut</string>
+    <string name="component_2d5_coin">2.5D Coin</string>
+    <string name="component_3d_opengl">3D OpenGL</string>
+</resources>

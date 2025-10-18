@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.8"
+        android:scaleY="0.8"
+        android:translateX="10.8"
+        android:translateY="10.8">
+        <!-- Circle outline -->
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M54,20 A34,34 0 1,1 54,88 A34,34 0 1,1 54,20"
+            android:strokeWidth="6"
+            android:strokeColor="#FFFFFF"/>
+        <!-- Letter C for Credit Score -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M 62,40 C 58,37 53,35 48,35 C 39,35 32,42 32,51 C 32,60 39,67 48,67 C 53,67 58,65 62,62 L 58,56 C 55,58 52,59 48,59 C 43,59 40,55 40,51 C 40,47 43,43 48,43 C 52,43 55,44 58,46 Z"/>
+    </group>
+</vector>
