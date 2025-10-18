@@ -7,17 +7,17 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.scoreretriever.presentation.screen.CreditScoreScreen
-import com.scoreretriever.ui.theme.CreditScoreTheme
+import com.scoreretriever.presentation.screen.ScoreScreen
+import com.scoreretriever.ui.theme.ScoreTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
- * Main activity for the Credit Score app.
+ * Main activity for the Score Retriever app.
  *
  * Responsibilities:
  * - Entry point for the app
  * - Sets up Compose UI with theme
- * - Hosts the CreditScoreScreen
+ * - Hosts the ScoreScreen
  * - Enables edge-to-edge display
  *
  * Annotated with @AndroidEntryPoint to enable Hilt dependency injection
@@ -39,11 +39,11 @@ class MainActivity : ComponentActivity() {
 
         // Set up Compose UI
         setContent {
-            CreditScoreTheme {
+            ScoreTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    CreditScoreScreen()
+                    ScoreScreen()
                 }
             }
         }

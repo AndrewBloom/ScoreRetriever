@@ -3,7 +3,7 @@ package com.scoreretriever.data.api.dto
 import com.google.gson.annotations.SerializedName
 
 /**
- * Data Transfer Object (DTO) for credit report information from the API.
+ * Data Transfer Object (DTO) for score information from the API.
  *
  * This class maps directly to the JSON structure returned by the API.
  * It uses @SerializedName annotations for Gson serialization/deserialization.
@@ -11,7 +11,7 @@ import com.google.gson.annotations.SerializedName
  * DTOs are kept in the data layer and converted to domain models before being
  * passed to the domain/presentation layers (Dependency Rule of Clean Architecture).
  */
-data class CreditReportInfoDto(
+data class ScoreInfoDto(
     @SerializedName("score")
     val score: Int,
 

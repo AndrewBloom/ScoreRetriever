@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Score Retriever</string>
-    <string name="credit_score_label">Your credit score is</string>
+    <string name="score_label">Your score is</string>
     <string name="out_of_max_score">out of %d</string>
-    <string name="loading_credit_score">Loading credit score...</string>
+    <string name="loading_score">Loading score...</string>
     <string name="error_oops">Oops!</string>
     <string name="retry">Retry</string>
     <string name="component_type">Component Type:</string>

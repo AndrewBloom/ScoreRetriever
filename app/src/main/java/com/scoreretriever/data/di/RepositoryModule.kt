@@ -1,7 +1,7 @@
 package com.scoreretriever.data.di
 
-import com.scoreretriever.data.repository.CreditScoreRepositoryImpl
-import com.scoreretriever.domain.repository.CreditScoreRepository
+import com.scoreretriever.data.repository.ScoreRepositoryImpl
+import com.scoreretriever.domain.repository.ScoreRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -12,8 +12,8 @@ import javax.inject.Singleton
  * Hilt module for binding repository interfaces to implementations.
  *
  * This module demonstrates Dependency Inversion Principle:
- * - Domain layer defines the interface (CreditScoreRepository)
- * - Data layer provides the implementation (CreditScoreRepositoryImpl)
+ * - Domain layer defines the interface (ScoreRepository)
+ * - Data layer provides the implementation (ScoreRepositoryImpl)
  * - This module binds them together for dependency injection
  *
  * Uses @Binds instead of @Provides for better performance:
@@ -28,10 +28,10 @@ import javax.inject.Singleton
 abstract class RepositoryModule {
 
     /**
-     * Binds CreditScoreRepository interface to CreditScoreRepositoryImpl.
+     * Binds ScoreRepository interface to ScoreRepositoryImpl.
      *
-     * When a class requests CreditScoreRepository via constructor injection,
-     * Hilt will provide an instance of CreditScoreRepositoryImpl.
+     * When a class requests ScoreRepository via constructor injection,
+     * Hilt will provide an instance of ScoreRepositoryImpl.
      *
      * This allows us to:
      * - Easily swap implementations (e.g., for testing or different data sources)
@@ -40,7 +40,7 @@ abstract class RepositoryModule {
      */
     @Binds
     @Singleton
-    abstract fun bindCreditScoreRepository(
-        impl: CreditScoreRepositoryImpl
-    ): CreditScoreRepository
+    abstract fun bindScoreRepository(
+        impl: ScoreRepositoryImpl
+    ): ScoreRepository
 }

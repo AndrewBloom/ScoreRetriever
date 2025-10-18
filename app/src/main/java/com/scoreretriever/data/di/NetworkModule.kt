@@ -1,6 +1,6 @@
 package com.scoreretriever.data.di
 
-import com.scoreretriever.data.api.CreditScoreApi
+import com.scoreretriever.data.api.ScoreApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -65,7 +65,7 @@ object NetworkModule {
 
     /**
      * Provides Retrofit instance configured with:
-     * - Base URL for the credit score API
+     * - Base URL for the score API
      * - Gson converter for JSON serialization/deserialization
      * - OkHttp client with interceptors
      */
@@ -73,20 +73,20 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(CreditScoreApi.BASE_URL)
+            .baseUrl(ScoreApi.BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
     /**
-     * Provides CreditScoreApi interface implementation.
+     * Provides ScoreApi interface implementation.
      *
      * Retrofit generates the implementation at runtime.
      */
     @Provides
     @Singleton
-    fun provideCreditScoreApi(retrofit: Retrofit): CreditScoreApi {
-        return retrofit.create(CreditScoreApi::class.java)
+    fun provideScoreApi(retrofit: Retrofit): ScoreApi {
+        return retrofit.create(ScoreApi::class.java)
     }
 }

@@ -24,7 +24,7 @@ val OnBackgroundDark = Color(0xFFE6E1E5)
 val OnSurfaceLight = Color(0xFF1C1B1F)
 val OnSurfaceDark = Color(0xFFE6E1E5)
 
-// Credit score specific colors
+// Score specific colors
 val ScoreGold = Color(0xFFFFB800)
 val ScoreGray = Color(0xFFE0E0E0)
 val ErrorRed = Color(0xFFB00020)

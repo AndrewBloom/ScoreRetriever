@@ -21,14 +21,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.scoreretriever.R
-import com.scoreretriever.domain.model.CreditScore
+import com.scoreretriever.domain.model.Score
 import com.scoreretriever.presentation.component.CoinLikeComponent
 import com.scoreretriever.presentation.component.ComponentType
 
 /**
  * Simple placeholder implementation of CoinLikeComponent for Phase 1.
  *
- * This component provides a basic visualization of the credit score:
+ * This component provides a basic visualization of the score:
  * - Circular progress indicator showing score percentage
  * - Score value displayed in the center
  * - Max score value shown below
@@ -47,7 +47,7 @@ import com.scoreretriever.presentation.component.ComponentType
 class PlaceholderComponent : CoinLikeComponent {
 
     @Composable
-    override fun Content(creditScore: CreditScore, modifier: Modifier) {
+    override fun Content(score: Score, modifier: Modifier) {
         Box(
             modifier = modifier.size(250.dp),
             contentAlignment = Alignment.Center
@@ -65,7 +65,7 @@ class PlaceholderComponent : CoinLikeComponent {
                 )
 
                 // Progress arc (colored based on score)
-                val sweepAngle = 360f * creditScore.percentage
+                val sweepAngle = 360f * score.percentage
                 val startAngle = -90f // Start from top
 
                 drawArc(
@@ -84,7 +84,7 @@ class PlaceholderComponent : CoinLikeComponent {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = stringResource(R.string.credit_score_label),
+                    text = stringResource(R.string.score_label),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
@@ -92,14 +92,14 @@ class PlaceholderComponent : CoinLikeComponent {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = creditScore.score.toString(),
+                    text = score.score.toString(),
                     fontSize = 72.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFFFB800)
                 )
 
                 Text(
-                    text = stringResource(id = R.string.out_of_max_score, creditScore.maxScore),
+                    text = stringResource(id = R.string.out_of_max_score, score.maxScore),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )

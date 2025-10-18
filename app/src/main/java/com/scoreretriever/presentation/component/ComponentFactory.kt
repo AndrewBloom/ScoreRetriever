@@ -19,7 +19,7 @@ import com.scoreretriever.presentation.component.impl.PlaceholderComponent
  * Usage:
  * ```kotlin
  * val component = ComponentFactory.create(ComponentType.PLACEHOLDER)
- * component.Content(creditScore)
+ * component.Content(score)
  * ```
  */
 object ComponentFactory {

@@ -2,10 +2,10 @@ package com.scoreretriever.presentation.component
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.scoreretriever.domain.model.CreditScore
+import com.scoreretriever.domain.model.Score
 
 /**
- * Interface for different implementations of the credit score display component.
+ * Interface for different implementations of the score display component.
  *
  * This interface follows SOLID principles:
  * - Interface Segregation: Minimal interface with only required methods
@@ -14,7 +14,7 @@ import com.scoreretriever.domain.model.CreditScore
  * - Dependency Inversion: UI depends on abstraction, not concrete implementations
  *
  * This enables the Strategy pattern:
- * - Multiple algorithms/implementations for displaying credit score
+ * - Multiple algorithms/implementations for displaying score
  * - Implementations can be swapped at runtime
  * - Each implementation is isolated and testable
  *
@@ -26,17 +26,17 @@ import com.scoreretriever.domain.model.CreditScore
  */
 interface CoinLikeComponent {
     /**
-     * Renders the credit score display component.
+     * Renders the score display component.
      *
      * This is a Composable function that implementations must provide.
-     * Each implementation can render the credit score in its own unique way.
+     * Each implementation can render the score in its own unique way.
      *
-     * @param creditScore The credit score data to display
+     * @param score The score data to display
      * @param modifier Compose modifier for styling and layout (default = Modifier)
      */
     @Composable
     fun Content(
-        creditScore: CreditScore,
+        score: Score,
         modifier: Modifier = Modifier
     )
 

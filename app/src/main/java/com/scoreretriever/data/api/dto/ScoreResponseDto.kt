@@ -1,18 +1,18 @@
 package com.scoreretriever.data.api.dto
 
-import com.scoreretriever.domain.model.CreditScore
+import com.scoreretriever.domain.model.Score
 import com.google.gson.annotations.SerializedName
 
 /**
- * Root DTO for the credit score API response.
+ * Root DTO for the score API response.
  *
  * This represents the top-level JSON object returned by the endpoint.
  * Only the fields needed for our use case are included (creditReportInfo).
  * Additional fields from the API can be added here if needed in the future.
  */
-data class CreditScoreResponseDto(
+data class ScoreResponseDto(
     @SerializedName("creditReportInfo")
-    val creditReportInfo: CreditReportInfoDto,
+    val scoreInfo: ScoreInfoDto,
 
     @SerializedName("accountIDVStatus")
     val accountIDVStatus: String? = null,
@@ -24,7 +24,7 @@ data class CreditScoreResponseDto(
     val personaType: String? = null
 
     // TODO Andrea 18/10
-    // coachingSummary and augmentedCreditScore currently not fetched
+    // coachingSummary and augmentedScore currently not fetched
 
 ) {
     /**
@@ -33,12 +33,12 @@ data class CreditScoreResponseDto(
      * This mapping function keeps the data layer decoupled from the domain layer.
      * It follows the Dependency Rule: data layer depends on domain, but not vice versa.
      *
-     * @return CreditScore domain model
+     * @return Score domain model
      */
-    fun toDomainModel(): CreditScore {
-        return CreditScore(
-            score = creditReportInfo.score,
-            maxScore = creditReportInfo.maxScoreValue
+    fun toDomainModel(): Score {
+        return Score(
+            score = scoreInfo.score,
+            maxScore = scoreInfo.maxScoreValue
         )
     }
 }

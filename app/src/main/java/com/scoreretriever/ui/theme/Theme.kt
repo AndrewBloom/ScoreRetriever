@@ -51,7 +51,7 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 /**
- * Main theme composable for the Credit Score app.
+ * Main theme composable for the Score app.
  *
  * Features:
  * - Supports light and dark themes
@@ -64,7 +64,7 @@ private val DarkColorScheme = darkColorScheme(
  * @param content The composable content to be themed
  */
 @Composable
-fun CreditScoreTheme(
+fun ScoreTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit

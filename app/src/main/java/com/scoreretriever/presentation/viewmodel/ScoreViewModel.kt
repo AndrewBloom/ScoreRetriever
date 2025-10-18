@@ -6,9 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.scoreretriever.R
 import com.scoreretriever.domain.model.ErrorType
 import com.scoreretriever.domain.model.Result
-import com.scoreretriever.domain.usecase.GetCreditScoreUseCase
+import com.scoreretriever.domain.usecase.GetScoreUseCase
 import com.scoreretriever.presentation.component.ComponentType
-import com.scoreretriever.presentation.state.CreditScoreUiState
+import com.scoreretriever.presentation.state.ScoreUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * ViewModel for the credit score screen following MVVM pattern.
+ * ViewModel for the score screen following MVVM pattern.
  *
  * Responsibilities:
  * - Manages UI state (Loading, Success, Error)
@@ -27,43 +27,43 @@ import javax.inject.Inject
  * - Handles component type selection
  *
  * This ViewModel follows SOLID principles:
- * - Single Responsibility: Only manages credit score UI state
+ * - Single Responsibility: Only manages score UI state
  * - Dependency Inversion: Depends on Use Case abstraction
  * - Open/Closed: Can be extended for new features
  *
- * @property getCreditScoreUseCase Use case for fetching credit score (injected by Hilt)
+ * @property getScoreUseCase Use case for fetching score (injected by Hilt)
  * @property application Application context for accessing string resources
  */
 @HiltViewModel
-class CreditScoreViewModel @Inject constructor(
-    private val getCreditScoreUseCase: GetCreditScoreUseCase,
+class ScoreViewModel @Inject constructor(
+    private val getScoreUseCase: GetScoreUseCase,
     private val application: Application
 ) : ViewModel() {
 
     // Backing property for mutable state (private)
-    private val _uiState = MutableStateFlow<CreditScoreUiState>(CreditScoreUiState.Loading)
+    private val _uiState = MutableStateFlow<ScoreUiState>(ScoreUiState.Loading)
 
     /**
      * Public immutable StateFlow for UI to observe.
      * UI collects this using collectAsStateWithLifecycle() in Compose.
      */
-    val uiState: StateFlow<CreditScoreUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<ScoreUiState> = _uiState.asStateFlow()
 
     // Backing property for component type selection
     private val _selectedComponentType = MutableStateFlow(ComponentType.PLACEHOLDER)
 
     /**
-     * Currently selected component type for rendering credit score.
+     * Currently selected component type for rendering score.
      */
     val selectedComponentType: StateFlow<ComponentType> = _selectedComponentType.asStateFlow()
 
     init {
-        // Fetch credit score on ViewModel creation
-        fetchCreditScore()
+        // Fetch score on ViewModel creation
+        fetchScore()
     }
 
     /**
-     * Fetches credit score from the use case.
+     * Fetches score from the use case.
      *
      * Flow:
      * 1. Sets state to Loading
@@ -73,17 +73,17 @@ class CreditScoreViewModel @Inject constructor(
      *
      * Runs in viewModelScope (cancelled when ViewModel is cleared).
      */
-    fun fetchCreditScore() {
+    fun fetchScore() {
         viewModelScope.launch {
-            _uiState.value = CreditScoreUiState.Loading
+            _uiState.value = ScoreUiState.Loading
 
-            getCreditScoreUseCase().collect { result ->
+            getScoreUseCase().collect { result ->
                 _uiState.value = when (result) {
                     is Result.Success -> {
-                        CreditScoreUiState.Success(result.data)
+                        ScoreUiState.Success(result.data)
                     }
                     is Result.Error -> {
-                        CreditScoreUiState.Error(mapErrorToMessage(result.errorType))
+                        ScoreUiState.Error(mapErrorToMessage(result.errorType))
                     }
                 }
             }
@@ -102,10 +102,10 @@ class CreditScoreViewModel @Inject constructor(
     /**
      * Handles retry action from error state.
      *
-     * Simply calls fetchCreditScore again.
+     * Simply calls fetchScore again.
      */
     fun onRetry() {
-        fetchCreditScore()
+        fetchScore()
     }
 
     /**

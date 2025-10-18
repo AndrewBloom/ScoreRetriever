@@ -1,15 +1,15 @@
 package com.scoreretriever.domain.model
 
 /**
- * Domain model representing a user's credit score.
+ * Domain model representing a user's score.
  *
  * This is a pure Kotlin data class with no Android or framework dependencies,
  * making it easy to test and maintain.
  *
- * @property score The current credit score value
- * @property maxScore The maximum possible credit score value
+ * @property score The current score value
+ * @property maxScore The maximum possible score value
  */
-data class CreditScore(
+data class Score(
     val score: Int,
     val maxScore: Int
 ) {

@@ -4,7 +4,7 @@ import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
 
 /**
- * Application class for the Credit Score app.
+ * Application class for the Score Retriever app.
  *
  * Annotated with @HiltAndroidApp to:
  * - Enable Hilt dependency injection throughout the app

@@ -30,11 +30,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.scoreretriever.R
 import com.scoreretriever.presentation.component.ComponentFactory
 import com.scoreretriever.presentation.component.ComponentType
-import com.scoreretriever.presentation.state.CreditScoreUiState
-import com.scoreretriever.presentation.viewmodel.CreditScoreViewModel
+import com.scoreretriever.presentation.state.ScoreUiState
+import com.scoreretriever.presentation.viewmodel.ScoreViewModel
 
 /**
- * Main screen for displaying credit score information.
+ * Main screen for displaying score information.
  *
  * This screen follows MVVM pattern and Compose best practices:
  * - Observes ViewModel state using StateFlow
@@ -45,12 +45,12 @@ import com.scoreretriever.presentation.viewmodel.CreditScoreViewModel
  * The screen is stateless and derives all UI from ViewModel state.
  * This makes it easy to test and ensures single source of truth.
  *
- * @param viewModel The credit score ViewModel (injected by Hilt via hiltViewModel())
+ * @param viewModel The score ViewModel (injected by Hilt via hiltViewModel())
  * @param modifier Optional modifier for the screen root
  */
 @Composable
-fun CreditScoreScreen(
-    viewModel: CreditScoreViewModel = hiltViewModel(),
+fun ScoreScreen(
+    viewModel: ScoreViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
     // Collect UI state with lifecycle awareness
@@ -67,21 +67,21 @@ fun CreditScoreScreen(
             contentAlignment = Alignment.Center
         ) {
             when (uiState) {
-                is CreditScoreUiState.Loading -> {
+                is ScoreUiState.Loading -> {
                     LoadingContent()
                 }
 
-                is CreditScoreUiState.Success -> {
-                    val creditScore = (uiState as CreditScoreUiState.Success).creditScore
+                is ScoreUiState.Success -> {
+                    val score = (uiState as ScoreUiState.Success).score
                     SuccessContent(
-                        creditScore = creditScore,
+                        score = score,
                         selectedComponentType = selectedComponentType,
                         onComponentTypeSelected = viewModel::onComponentTypeSelected
                     )
                 }
 
-                is CreditScoreUiState.Error -> {
-                    val errorMessage = (uiState as CreditScoreUiState.Error).message
+                is ScoreUiState.Error -> {
+                    val errorMessage = (uiState as ScoreUiState.Error).message
                     ErrorContent(
                         message = errorMessage,
                         onRetry = viewModel::onRetry
@@ -105,7 +105,7 @@ private fun LoadingContent() {
         CircularProgressIndicator()
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = stringResource(R.string.loading_credit_score),
+            text = stringResource(R.string.loading_score),
             style = MaterialTheme.typography.bodyLarge
         )
     }
@@ -113,12 +113,12 @@ private fun LoadingContent() {
 
 /**
  * Success state UI.
- * Displays the credit score using the selected component implementation
+ * Displays the score using the selected component implementation
  * and provides a component type selector.
  */
 @Composable
 private fun SuccessContent(
-    creditScore: com.scoreretriever.domain.model.CreditScore,
+    score: com.scoreretriever.domain.model.Score,
     selectedComponentType: ComponentType,
     onComponentTypeSelected: (ComponentType) -> Unit
 ) {
@@ -135,7 +135,7 @@ private fun SuccessContent(
         }
 
         component.Content(
-            creditScore = creditScore,
+            score = score,
             modifier = Modifier.weight(1f)
         )
 

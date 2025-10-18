@@ -22,7 +22,7 @@ import com.scoreretriever.R
 enum class ComponentType(@StringRes val displayNameRes: Int) {
     /**
      * Simple placeholder component for Phase 1.
-     * Displays credit score as text with basic styling.
+     * Displays score as text with basic styling.
      */
     PLACEHOLDER(R.string.component_placeholder),
 

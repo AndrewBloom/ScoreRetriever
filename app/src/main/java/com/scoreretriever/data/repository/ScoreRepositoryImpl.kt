@@ -1,17 +1,17 @@
 package com.scoreretriever.data.repository
 
-import com.scoreretriever.data.api.CreditScoreApi
-import com.scoreretriever.domain.model.CreditScore
+import com.scoreretriever.data.api.ScoreApi
+import com.scoreretriever.domain.model.Score
 import com.scoreretriever.domain.model.ErrorType
 import com.scoreretriever.domain.model.Result
-import com.scoreretriever.domain.repository.CreditScoreRepository
+import com.scoreretriever.domain.repository.ScoreRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.io.IOException
 import javax.inject.Inject
 
 /**
- * Implementation of CreditScoreRepository interface.
+ * Implementation of ScoreRepository interface.
  *
  * This class follows Clean Architecture principles:
  * - Implements interface defined in domain layer
@@ -23,12 +23,12 @@ import javax.inject.Inject
  *
  * @property api The Retrofit API interface (injected by Hilt)
  */
-class CreditScoreRepositoryImpl @Inject constructor(
-    private val api: CreditScoreApi
-) : CreditScoreRepository {
+class ScoreRepositoryImpl @Inject constructor(
+    private val api: ScoreApi
+) : ScoreRepository {
 
     /**
-     * Fetches credit score from the API.
+     * Fetches score from the API.
      *
      * This method:
      * 1. Makes the API call using coroutines
@@ -44,18 +44,18 @@ class CreditScoreRepositoryImpl @Inject constructor(
      * - Validation errors (IllegalArgumentException from domain model)
      * - Any other unexpected errors
      *
-     * @return Flow emitting Result containing CreditScore or Error
+     * @return Flow emitting Result containing Score or Error
      */
-    override fun getCreditScore(): Flow<Result<CreditScore>> = flow {
+    override fun getScore(): Flow<Result<Score>> = flow {
         try {
             // Make API call
-            val response = api.getCreditScore()
+            val response = api.getScore()
 
             // Convert DTO to domain model
-            val creditScore = response.toDomainModel()
+            val score = response.toDomainModel()
 
             // Emit success result
-            emit(Result.Success(creditScore))
+            emit(Result.Success(score))
         } catch (e: IOException) {
             // Network error
             emit(Result.Error(
