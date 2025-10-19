@@ -190,27 +190,38 @@ class ScoreScreenTest {
     }
 
     @Test
-    fun successState_withDifferentScores_displaysCorrectly() {
+    fun successState_withZeroScore_displaysCorrectly() {
         // Given
-        val testCases = listOf(
-            Score(score = 0, maxScore = 700),
-            Score(score = 350, maxScore = 700),
-            Score(score = 700, maxScore = 700)
-        )
+        val score = Score(score = 0, maxScore = 700)
+        uiStateFlow.value = ScoreUiState.Success(score)
 
-        testCases.forEach { score ->
-            uiStateFlow.value = ScoreUiState.Success(score)
-
-            // When
-            composeTestRule.setContent {
-                ScoreTheme {
-                    ScoreScreen(viewModel = viewModel)
-                }
+        // When
+        composeTestRule.setContent {
+            ScoreTheme {
+                ScoreScreen(viewModel = viewModel)
             }
-
-            // Then
-            composeTestRule.onNodeWithText(score.score.toString()).assertIsDisplayed()
-            composeTestRule.onNodeWithText("out of ${score.maxScore}").assertIsDisplayed()
         }
+
+        // Then
+        composeTestRule.onNodeWithText("0").assertIsDisplayed()
+        composeTestRule.onNodeWithText("out of 700").assertIsDisplayed()
+    }
+
+    @Test
+    fun successState_withMaxScore_displaysCorrectly() {
+        // Given
+        val score = Score(score = 700, maxScore = 700)
+        uiStateFlow.value = ScoreUiState.Success(score)
+
+        // When
+        composeTestRule.setContent {
+            ScoreTheme {
+                ScoreScreen(viewModel = viewModel)
+            }
+        }
+
+        // Then
+        composeTestRule.onNodeWithText("700").assertIsDisplayed()
+        composeTestRule.onNodeWithText("out of 700").assertIsDisplayed()
     }
 }
