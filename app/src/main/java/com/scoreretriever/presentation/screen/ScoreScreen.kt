@@ -5,17 +5,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -23,11 +18,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.FixedScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -47,10 +39,12 @@ import com.scoreretriever.presentation.viewmodel.ScoreViewModel
  * - Observes ViewModel state using StateFlow
  * - Handles all UI states (Loading, Success, Error)
  * - Uses ComponentFactory to render different component types
- * - Provides component type selector for demonstration
  *
  * The screen is stateless and derives all UI from ViewModel state.
  * This makes it easy to test and ensures single source of truth.
+ *
+ * Note: Component type selector has been removed. Navigation bar will be
+ * added in a future branch to switch between component implementations.
  *
  * @param viewModel The score ViewModel (injected by Hilt via hiltViewModel())
  * @param modifier Optional modifier for the screen root
@@ -90,8 +84,7 @@ fun ScoreScreen(
                     val score = (uiState as ScoreUiState.Success).score
                     SuccessContent(
                         score = score,
-                        selectedComponentType = selectedComponentType,
-                        onComponentTypeSelected = viewModel::onComponentTypeSelected
+                        selectedComponentType = selectedComponentType
                     )
                 }
 
@@ -128,14 +121,14 @@ private fun LoadingContent() {
 
 /**
  * Success state UI.
- * Displays the score using the selected component implementation
- * and provides a component type selector.
+ * Displays the score using the selected component implementation.
+ * Component type selector removed - will be replaced with navigation bar in future branch.
+ * Maintains original vertical positioning with bottom padding to match previous layout.
  */
 @Composable
 private fun SuccessContent(
     score: com.scoreretriever.domain.model.Score,
-    selectedComponentType: ComponentType,
-    onComponentTypeSelected: (ComponentType) -> Unit
+    selectedComponentType: ComponentType
 ) {
     Column(
         modifier = Modifier
@@ -154,13 +147,9 @@ private fun SuccessContent(
             modifier = Modifier.weight(1f)
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Component type selector
-        ComponentTypeSelector(
-            selectedType = selectedComponentType,
-            onTypeSelected = onComponentTypeSelected
-        )
+        // Spacer to maintain original component position
+        // (approximates space previously occupied by selector UI)
+        Spacer(modifier = Modifier.height(260.dp))
     }
 }
 
@@ -201,51 +190,3 @@ private fun ErrorContent(
     }
 }
 
-/**
- * Component type selector UI.
- * Displays chips for each component type to allow switching implementations.
- * Currently only PLACEHOLDER is functional; others will be added in later phases.
- */
-@Composable
-private fun ComponentTypeSelector(
-    selectedType: ComponentType,
-    onTypeSelected: (ComponentType) -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = stringResource(id = R.string.component_type),
-            style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ComponentType.entries.forEach { type ->
-                FilterChip(
-                    selected = type == selectedType,
-                    onClick = { onTypeSelected(type) },
-                    label = { Text(stringResource(type.displayNameRes)) },
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                )
-
-                if (type != ComponentType.entries.last()) {
-                    Spacer(modifier = Modifier.width(4.dp))
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = stringResource(id = R.string.placeholder_note),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-            textAlign = TextAlign.Center
-        )
-    }
-}

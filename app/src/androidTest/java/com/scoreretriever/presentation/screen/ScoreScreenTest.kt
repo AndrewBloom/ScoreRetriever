@@ -22,8 +22,10 @@ import org.junit.Test
  * - Loading state UI
  * - Success state UI with score display
  * - Error state UI with error message and retry button
- * - Component type selector
- * - User interactions (retry button, component selection)
+ * - User interactions (retry button)
+ *
+ * Note: Component type selector tests removed as the UI has been simplified.
+ * Navigation bar tests will be added in a future branch.
  */
 class ScoreScreenTest {
 
@@ -80,46 +82,6 @@ class ScoreScreenTest {
     }
 
     @Test
-    fun successState_showsComponentTypeSelector() {
-        // Given
-        val score = Score(score = 514, maxScore = 700)
-        uiStateFlow.value = ScoreUiState.Success(score)
-
-        // When
-        composeTestRule.setContent {
-            ScoreTheme {
-                ScoreScreen(viewModel = viewModel)
-            }
-        }
-
-        // Then
-        composeTestRule.onNodeWithText("Component Type:").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Placeholder").assertIsDisplayed()
-        composeTestRule.onNodeWithText("2D Donut").assertIsDisplayed()
-        composeTestRule.onNodeWithText("2.5D Coin").assertIsDisplayed()
-        composeTestRule.onNodeWithText("3D OpenGL").assertIsDisplayed()
-    }
-
-    @Test
-    fun successState_clickingComponentType_callsViewModel() {
-        // Given
-        val score = Score(score = 514, maxScore = 700)
-        uiStateFlow.value = ScoreUiState.Success(score)
-
-        composeTestRule.setContent {
-            ScoreTheme {
-                ScoreScreen(viewModel = viewModel)
-            }
-        }
-
-        // When
-        composeTestRule.onNodeWithText("2D Donut").performClick()
-
-        // Then
-        verify { viewModel.onComponentTypeSelected(ComponentType.BASIC_2D) }
-    }
-
-    @Test
     fun errorState_displaysErrorMessage() {
         // Given
         val errorMessage = "Network error. Please check your connection."
@@ -169,24 +131,6 @@ class ScoreScreenTest {
 
         // Then
         verify { viewModel.onRetry() }
-    }
-
-    @Test
-    fun successState_displaysPlaceholderNote() {
-        // Given
-        val score = Score(score = 514, maxScore = 700)
-        uiStateFlow.value = ScoreUiState.Success(score)
-
-        // When
-        composeTestRule.setContent {
-            ScoreTheme {
-                ScoreScreen(viewModel = viewModel)
-            }
-        }
-
-        // Then
-        composeTestRule.onNodeWithText("Note: Only Placeholder is implemented in Phase 1")
-            .assertIsDisplayed()
     }
 
     @Test
