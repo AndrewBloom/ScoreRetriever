@@ -87,6 +87,10 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
 
+    // Haze (Glassmorphic blur effects)
+    implementation(libs.haze)
+    implementation(libs.haze.materials)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

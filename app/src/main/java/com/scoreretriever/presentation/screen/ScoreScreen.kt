@@ -38,6 +38,9 @@ import com.scoreretriever.presentation.component.ComponentFactory
 import com.scoreretriever.presentation.component.ComponentType
 import com.scoreretriever.presentation.state.ScoreUiState
 import com.scoreretriever.presentation.viewmodel.ScoreViewModel
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 
 /**
  * Main screen for displaying score information.
@@ -169,16 +172,29 @@ private fun LoadingContent() {
  * Displays the score using the selected component implementation.
  * Navigation bar provides component type selection at bottom of screen.
  */
+@OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
 private fun SuccessContent(
     score: com.scoreretriever.domain.model.Score,
     selectedComponentType: ComponentType
 ) {
+    val hazeState = remember { HazeState() }
+
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .haze(hazeState), // Background participates in the haze field
         contentAlignment = Alignment.Center
     ) {
-        // Create and display the selected component
+        // Background image (blur target)
+        Image(
+            painter = painterResource(id = R.drawable.selection),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+        )
+
+        // Create and display the selected component (blur foreground)
         val component = remember(selectedComponentType) {
             ComponentFactory.create(selectedComponentType)
         }
@@ -186,9 +202,11 @@ private fun SuccessContent(
         component.Content(
             score = score,
             modifier = Modifier
+                .haze(hazeState) // Foreground content applies the blur effect
         )
     }
 }
+
 
 /**
  * Error state UI.

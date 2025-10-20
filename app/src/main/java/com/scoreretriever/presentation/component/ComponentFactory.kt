@@ -1,5 +1,7 @@
 package com.scoreretriever.presentation.component
 
+import com.scoreretriever.presentation.component.impl.Enhanced2DComponent
+import com.scoreretriever.presentation.component.impl.HazeCoinComponent
 import com.scoreretriever.presentation.component.impl.PlaceholderComponent
 
 /**
@@ -27,10 +29,10 @@ object ComponentFactory {
      * Creates a CoinLikeComponent instance based on the specified type.
      *
      * Current implementations:
-     * - PLACEHOLDER: PlaceholderComponent (Phase 1)
-     * - BASIC_2D: Not yet implemented (Phase 3) - returns placeholder for now
-     * - ENHANCED_2D: Not yet implemented (Phase 4) - returns placeholder for now
-     * - OPENGL_3D: Not yet implemented (Phase 5) - returns placeholder for now
+     * - PLACEHOLDER: PlaceholderComponent - Simple 2D with circular progress
+     * - ENHANCED_2D: Enhanced2DComponent - Glassmorphic coin with Haze blur effects
+     * - BASIC_2D: Not yet implemented - returns placeholder for now
+     * - OPENGL_3D: Not yet implemented - returns placeholder for now
      *
      * As new implementations are added in future phases, this method will be updated
      * to return the appropriate component type.
@@ -42,6 +44,8 @@ object ComponentFactory {
         return when (type) {
             ComponentType.PLACEHOLDER -> PlaceholderComponent()
 
+            ComponentType.ENHANCED_2D -> Enhanced2DComponent()
+
             // Future implementations (to be added in later phases)
             ComponentType.BASIC_2D -> {
                 // TODO: Phase 3 - Implement Basic2DComponent
@@ -49,16 +53,10 @@ object ComponentFactory {
                 PlaceholderComponent() // Fallback for now
             }
 
-            ComponentType.ENHANCED_2D -> {
-                // TODO: Phase 4 - Implement Enhanced2DComponent (glassmorphic coin)
-                // return Enhanced2DComponent()
-                PlaceholderComponent() // Fallback for now
-            }
-
             ComponentType.OPENGL_3D -> {
                 // TODO: Phase 5 - Implement OpenGL3DComponent
                 // return OpenGL3DComponent()
-                PlaceholderComponent() // Fallback for now
+                HazeCoinComponent()
             }
         }
     }
