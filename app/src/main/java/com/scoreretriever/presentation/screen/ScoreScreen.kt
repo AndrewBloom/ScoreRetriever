@@ -15,6 +15,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,12 +46,15 @@ import com.scoreretriever.presentation.viewmodel.ScoreViewModel
  * - Observes ViewModel state using StateFlow
  * - Handles all UI states (Loading, Success, Error)
  * - Uses ComponentFactory to render different component types
+ * - Bottom navigation bar for switching between visualization types
  *
  * The screen is stateless and derives all UI from ViewModel state.
  * This makes it easy to test and ensures single source of truth.
  *
- * Note: Component type selector has been removed. Navigation bar will be
- * added in a future branch to switch between component implementations.
+ * Navigation bar includes three visualization options:
+ * - Simple 2D (currently PLACEHOLDER implementation)
+ * - Complex 2D (ENHANCED_2D - to be implemented)
+ * - True 3D (OPENGL_3D - to be implemented)
  *
  * @param viewModel The score ViewModel (injected by Hilt via hiltViewModel())
  * @param modifier Optional modifier for the screen root
@@ -64,7 +69,31 @@ fun ScoreScreen(
     val selectedComponentType by viewModel.selectedComponentType.collectAsStateWithLifecycle()
 
     Scaffold(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize(),
+        bottomBar = {
+            NavigationBar(
+                containerColor = Color(0xE0202020)
+            ) {
+                NavigationBarItem(
+                    selected = selectedComponentType == ComponentType.PLACEHOLDER,
+                    onClick = { viewModel.onComponentTypeSelected(ComponentType.PLACEHOLDER) },
+                    icon = { Text("📊", fontSize = 24.sp) },
+                    label = { Text(stringResource(R.string.nav_simple_2d)) }
+                )
+                NavigationBarItem(
+                    selected = selectedComponentType == ComponentType.ENHANCED_2D,
+                    onClick = { viewModel.onComponentTypeSelected(ComponentType.ENHANCED_2D) },
+                    icon = { Text("🎨", fontSize = 24.sp) },
+                    label = { Text(stringResource(R.string.nav_complex_2d)) }
+                )
+                NavigationBarItem(
+                    selected = selectedComponentType == ComponentType.OPENGL_3D,
+                    onClick = { viewModel.onComponentTypeSelected(ComponentType.OPENGL_3D) },
+                    icon = { Text("🎯", fontSize = 24.sp) },
+                    label = { Text(stringResource(R.string.nav_true_3d)) }
+                )
+            }
+        }
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -108,7 +137,6 @@ fun ScoreScreen(
 /**
  * Loading state UI.
  * Displays a larger circular progress indicator with enhanced text.
- * Positioned higher on the screen to match component positioning.
  */
 @Composable
 private fun LoadingContent() {
@@ -133,29 +161,22 @@ private fun LoadingContent() {
             fontSize = 20.sp,
             color = Color.DarkGray.copy(alpha = 0.9f)
         )
-
-        // Spacer to position higher (same as success state)
-        Spacer(modifier = Modifier.height(260.dp))
     }
 }
 
 /**
  * Success state UI.
  * Displays the score using the selected component implementation.
- * Component type selector removed - will be replaced with navigation bar in future branch.
- * Maintains original vertical positioning with bottom padding to match previous layout.
+ * Navigation bar provides component type selection at bottom of screen.
  */
 @Composable
 private fun SuccessContent(
     score: com.scoreretriever.domain.model.Score,
     selectedComponentType: ComponentType
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
         // Create and display the selected component
         val component = remember(selectedComponentType) {
@@ -164,19 +185,14 @@ private fun SuccessContent(
 
         component.Content(
             score = score,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
         )
-
-        // Spacer to maintain original component position
-        // (approximates space previously occupied by selector UI)
-        Spacer(modifier = Modifier.height(260.dp))
     }
 }
 
 /**
  * Error state UI.
  * Displays error message with a retry button in a semi-transparent container.
- * Positioned higher on the screen to match component positioning.
  */
 @Composable
 private fun ErrorContent(
@@ -235,9 +251,6 @@ private fun ErrorContent(
                 )
             }
         }
-
-        // Spacer to position higher (same as success state)
-        Spacer(modifier = Modifier.height(260.dp))
     }
 }
 

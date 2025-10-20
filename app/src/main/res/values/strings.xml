@@ -26,4 +26,9 @@
     <string name="component_2d_donut">2D Donut</string>
     <string name="component_2d5_coin">2.5D Coin</string>
     <string name="component_3d_opengl">3D OpenGL</string>
+
+    <!-- Navigation bar labels -->
+    <string name="nav_simple_2d">Simple 2D</string>
+    <string name="nav_complex_2d">Complex 2D</string>
+    <string name="nav_true_3d">True 3D</string>
 </resources>
