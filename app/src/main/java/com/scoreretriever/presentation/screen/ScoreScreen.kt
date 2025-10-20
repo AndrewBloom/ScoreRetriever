@@ -2,6 +2,7 @@
 package com.scoreretriever.presentation.screen
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -19,11 +22,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.scoreretriever.R
@@ -102,20 +107,35 @@ fun ScoreScreen(
 
 /**
  * Loading state UI.
- * Displays a circular progress indicator with loading text.
+ * Displays a larger circular progress indicator with enhanced text.
+ * Positioned higher on the screen to match component positioning.
  */
 @Composable
 private fun LoadingContent() {
     Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        CircularProgressIndicator()
-        Spacer(modifier = Modifier.height(16.dp))
+        // Larger spinning wheel
+        CircularProgressIndicator(
+            modifier = Modifier.size(96.dp),
+            strokeWidth = 12.dp,
+            color = Color.DarkGray.copy(alpha = 0.9f)
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
         Text(
             text = stringResource(R.string.loading_score),
-            style = MaterialTheme.typography.bodyLarge
+            fontSize = 20.sp,
+            color = Color.DarkGray.copy(alpha = 0.9f)
         )
+
+        // Spacer to position higher (same as success state)
+        Spacer(modifier = Modifier.height(260.dp))
     }
 }
 
@@ -155,7 +175,8 @@ private fun SuccessContent(
 
 /**
  * Error state UI.
- * Displays error message with a retry button.
+ * Displays error message with a retry button in a semi-transparent container.
+ * Positioned higher on the screen to match component positioning.
  */
 @Composable
 private fun ErrorContent(
@@ -163,30 +184,60 @@ private fun ErrorContent(
     onRetry: () -> Unit
 ) {
     Column(
-        modifier = Modifier.padding(24.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = stringResource(id = R.string.error_oops),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.error
-        )
+        // Semi-transparent dark gray rounded rectangle container
+        Column(
+            modifier = Modifier
+                .background(
+                    color = Color(0xCC303030),
+                    shape = RoundedCornerShape(24.dp)
+                )
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Network error icon (text emoji)
+            Text(
+                text = "⚠️",
+                fontSize = 64.sp
+            )
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-        )
+            Text(
+                text = stringResource(id = R.string.error_oops),
+                fontSize = 28.sp,
+                color = Color(0xFFFFB800)
+            )
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-        Button(onClick = onRetry) {
-            Text(stringResource(id = R.string.retry))
+            Text(
+                text = message,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center,
+                color = Color.White.copy(alpha = 0.9f)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = onRetry,
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = stringResource(id = R.string.retry),
+                    fontSize = 16.sp
+                )
+            }
         }
+
+        // Spacer to position higher (same as success state)
+        Spacer(modifier = Modifier.height(260.dp))
     }
 }
 

@@ -56,6 +56,7 @@ class ScoreRepositoryImpl @Inject constructor(
 
             // Emit success result
             emit(Result.Success(score))
+
         } catch (e: IOException) {
             // Network error
             emit(Result.Error(

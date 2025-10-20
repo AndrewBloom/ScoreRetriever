@@ -57,7 +57,6 @@ class ScoreScreenTest {
                 ScoreScreen(viewModel = viewModel)
             }
         }
-
         // Then
         composeTestRule.onNodeWithText("Loading score...").assertIsDisplayed()
     }
