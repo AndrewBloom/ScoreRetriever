@@ -1,11 +1,13 @@
 package com.scoreretriever.presentation.component.impl
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,17 +51,24 @@ class PlaceholderComponent : CoinLikeComponent {
     @Composable
     override fun Content(score: Score, modifier: Modifier) {
         Box(
-            modifier = modifier.size(250.dp),
+            modifier = modifier.size(320.dp),
             contentAlignment = Alignment.Center
         ) {
-            // Background circle
+            // Semi-transparent circular background
+            Box(
+                modifier = Modifier
+                    .size(266.dp)  // Larger to accommodate blur spread
+                    .background(Color(0x90202020), shape = CircleShape)
+            )
+
+            // Donut progress indicator
             Canvas(modifier = Modifier.size(250.dp)) {
                 val strokeWidth = 12.dp.toPx()
                 val diameter = size.minDimension - strokeWidth
 
-                // Background circle (gray)
+                // Background circle (dark gray)
                 drawCircle(
-                    color = Color(0xFFE0E0E0),
+                    color = Color(0xFF505050),
                     radius = diameter / 2,
                     style = Stroke(width = strokeWidth)
                 )
@@ -85,23 +94,23 @@ class PlaceholderComponent : CoinLikeComponent {
             ) {
                 Text(
                     text = stringResource(R.string.score_label),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.White.copy(alpha = 0.9f)
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = score.score.toString(),
-                    fontSize = 72.sp,
+                    fontSize = 80.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFFFB800)
                 )
 
                 Text(
                     text = stringResource(id = R.string.out_of_max_score, score.maxScore),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    fontSize = 18.sp,
+                    color = Color.White.copy(alpha = 0.8f)
                 )
             }
         }
