@@ -220,7 +220,7 @@ class CoinGeometry(
  * - Page indicator dots
  * - Toroidal navigation (wraps around from 4 to 1)
  */
-class Enhanced2DComponentRefactored(
+class Enhanced2DComponent(
     private val params: CoinParameters = CoinParameters()
 ) : CoinLikeComponent {
     private val pagesIndicator = PagesIndicatorComponent(params.totalPages)
