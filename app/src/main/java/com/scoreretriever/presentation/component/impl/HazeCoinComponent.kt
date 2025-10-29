@@ -1,37 +1,33 @@
 package com.scoreretriever.presentation.component.impl
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.rememberSplineBasedDecay
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.scoreretriever.domain.model.Score
 import com.scoreretriever.presentation.component.CoinLikeComponent
 import com.scoreretriever.presentation.component.ComponentType
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
-import kotlinx.coroutines.launch
+import dev.chrisbanes.haze.materials.HazeMaterials
 import kotlin.math.abs
+import kotlin.math.*
 
 class HazeCoinComponent(
     private val onClick: (() -> Unit)? = null,
@@ -41,168 +37,166 @@ class HazeCoinComponent(
 
     @OptIn(ExperimentalHazeMaterialsApi::class)
     @Composable
-    override fun Content(score: Score, modifier: Modifier) {
-        val hazeState = remember { HazeState() }
+    override fun Content(score: Score, modifier: Modifier, hazeState: HazeState) {
         val density = LocalDensity.current.density
-        val rotation = remember { Animatable(0f) }
-        val scope = rememberCoroutineScope()
-        val decay = rememberSplineBasedDecay<Float>()
-        var currentPage by remember { mutableStateOf(0) }
-        var isAnimating by remember { mutableStateOf(false) }
+        val rotation = remember { Animatable(60f) }
 
-        // Determine which page to show
-        val displayPage = remember(rotation.value, currentPage) {
-            if (abs(rotation.value) > 90f) {
-                if (rotation.value > 0) (currentPage - 1 + 4) % 4 else (currentPage + 1) % 4
-            } else currentPage
+        val coinRadius = 133.dp // Half of 266dp coin diameter
+        var focalK by remember { mutableStateOf(20f) }
+
+        // --- Animation ---
+        LaunchedEffect(Unit) {
+            while (true) {
+                rotation.animateTo(
+                    targetValue = rotation.value + 360f, // rotate one full turn
+                    animationSpec = tween(
+                        durationMillis = 4000, // 4 seconds per rotation
+                        easing = LinearEasing
+                    )
+                )
+                // loop will continue indefinitely
+            }
         }
-
-        Column(
-            modifier = modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Box(
+            modifier = Modifier
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
+            // CoinRimSimulation(slideOffset * 2, rotation, coinRadius)
+            // The coin face - rotates and slides horizontally
             Box(
                 modifier = Modifier
-                    .size(320.dp)
-                    .pointerInput(Unit) {
-                        detectHorizontalDragGestures(
-                            onHorizontalDrag = { _, dragAmount ->
-                                if (!isAnimating) {
-                                    scope.launch { rotation.snapTo(rotation.value + dragAmount / 5f) }
-                                }
-                            },
-                            onDragEnd = {
-                                scope.launch {
-                                    val targetPage = if (abs(rotation.value) > 45f) {
-                                        if (rotation.value > 0) (currentPage - 1 + 4) % 4 else (currentPage + 1) % 4
-                                    } else currentPage
-                                    val targetRotation = ((targetPage - currentPage) * 180f).toFloat()
-                                    isAnimating = true
-                                    rotation.animateTo(
-                                        targetRotation,
-                                        animationSpec = spring(
-                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                            stiffness = Spring.StiffnessMedium
-                                        )
-                                    )
-                                    currentPage = targetPage
-                                    rotation.snapTo(0f)
-                                    isAnimating = false
-                                }
-                            }
-                        )
-                    }
+                    .size(coinRadius * 2)
                     .graphicsLayer {
+                        cameraDistance = 12f * density
                         rotationY = rotation.value
-                        cameraDistance = 12 * density
-                    },
-                contentAlignment = Alignment.Center
+                    }
+                    .clip(CircleShape)
+                    .hazeEffect(state = hazeState, style = HazeMaterials.ultraThin())
+                    .drawBehind { drawRect(Color(0x000000FF)) }
+                    .background(Color(0xA0202020)),
+                contentAlignment = Alignment.Center,
             ) {
-                // Rim shading
-                Canvas(Modifier.matchParentSize()) {
-                    val radius = size.minDimension / 2f
-                    drawCircle(
-                        brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                            listOf(Color(0xFFBBBBBB), Color(0xFF444444)),
-                            center = center,
-                            radius = radius * 0.95f
-                        ),
-                        radius = radius * 0.95f,
-                        alpha = 0.3f + thicknessFactor * 0.5f
-                    )
-                }
-
-                // Blurred background
+                // Content with additional flip when past 90°
                 Box(
                     modifier = Modifier
-                        .fillMaxSize(0.9f)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = blurAlpha))
-                        .haze(hazeState),
-                    contentAlignment = Alignment.Center
+                        .graphicsLayer {
+                            rotationY = if (abs(rotation.value) > 90f) 180f else 0f
+                        },
+                    contentAlignment = Alignment.Center,
                 ) {
-                    CoinFaceContent(displayPage, score)
+                    Text("HAZE!")
                 }
+                RotatedCircleOutline(radiusPx = coinRadius.value * density, rotationYDeg = rotation.value, focalDistancePx = focalK*12f * density)
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Page indicators
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                repeat(4) { index ->
-                    Box(
-                        modifier = Modifier
-                            .size(if (index == currentPage) 12.dp else 8.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (index == currentPage) Color(0xFFFFB800) else Color.White.copy(alpha = 0.3f)
-                            )
-                    )
-                }
-            }
+        }
+        Box(contentAlignment = Alignment.BottomCenter, modifier = Modifier.fillMaxSize()) {
+            Slider(
+                value = focalK,
+                onValueChange = { focalK = it.coerceAtLeast(200f) },
+                valueRange = 200f..500f,
+                steps = 0,
+            )
         }
     }
 
     @Composable
-    private fun CoinFaceContent(page: Int, score: Score) {
-        when (page) {
-            0 -> ScoreFace(score)
-            1 -> PercentageFace(score)
-            2 -> DetailsFace(score)
-            3 -> InfoFace(score)
-        }
-    }
+    fun RotatedCircleOutline(
+        modifier: Modifier = Modifier,
+        radiusPx: Float,
+        rotationYDeg: Float,
+        focalDistancePx: Float,
+        color: Color = Color.Yellow,
+        strokeWidth: Float = 3f
+    ) {
+        Box(modifier = modifier) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val ellipse = projectRotatedCircleCompose(
+                    radius = radiusPx,
+                    thetaDeg = rotationYDeg,
+                    focalDistance = focalDistancePx
+                )
 
-    @Composable
-    private fun ScoreFace(score: Score) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Canvas(modifier = Modifier.size(250.dp)) {
-                val stroke = 12.dp.toPx()
-                val diameter = size.minDimension - stroke
-                // Background circle
-                drawCircle(Color(0xFF505050), diameter / 2, style = Stroke(stroke))
-                // Progress arc
-                val sweep = 360f * score.percentage
-                drawArc(
-                    color = Color(0xFFFFB800),
-                    startAngle = -90f,
-                    sweepAngle = sweep,
-                    useCenter = false,
-                    topLeft = androidx.compose.ui.geometry.Offset(stroke / 2, stroke / 2),
-                    size = androidx.compose.ui.geometry.Size(diameter, diameter),
-                    style = Stroke(width = stroke, cap = StrokeCap.Round)
+                val cx = size.width / 2 + ellipse.centerX
+                val cy = size.height / 2
+                val left = cx - ellipse.a
+                val top = cy - ellipse.b
+                val right = cx + ellipse.a
+                val bottom = cy + ellipse.b
+
+                drawOval(
+                    color = color,
+                    topLeft = androidx.compose.ui.geometry.Offset(left, top),
+                    size = androidx.compose.ui.geometry.Size(right - left, bottom - top),
+                    style = Stroke(width = strokeWidth)
                 )
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(score.score.toString(), fontSize = 80.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFFB800))
-            Text("Out of ${score.maxScore}", fontSize = 18.sp, color = Color.White.copy(alpha = 0.8f))
         }
     }
 
-    @Composable
-    private fun PercentageFace(score: Score) {
-        Text("${(score.percentage * 100).toInt()}%", fontSize = 72.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFFB800))
+    data class EllipseProjection(
+        val centerX: Float,
+        val a: Float, // horizontal semi-axis
+        val b: Float  // vertical semi-axis
+    )
+
+    /**
+     * Project a circle of radius `radius` (px) rotated by `thetaDeg` around Y,
+     * with perspective focal distance `focalDistance` (px).
+     *
+     * - radius: circle radius in pixels (e.g. coinRadiusDp.toPx()).
+     * - thetaDeg: rotationY in degrees (Compose uses degrees).
+     * - focalDistance: camera distance in pixels (e.g. cameraDistance * density).
+     *
+     * returns EllipseProjection(centerX, a, b) in the same units (px).
+     */
+    fun projectRotatedCircleEllipse(
+        radius: Float,
+        thetaDeg: Float,
+        focalDistance: Float
+    ): EllipseProjection {
+        val theta = Math.toRadians(thetaDeg.toDouble())
+        val r = radius.toDouble()
+        val f = focalDistance.toDouble()
+
+        val sinT = sin(theta)
+        val cosT = cos(theta)
+
+        val delta = f * f - r * r * sinT * sinT
+        require(delta > 0.0) { "Projection degenerates: f^2 <= r^2 * sin^2(theta). Increase focalDistance or reduce radius/rotation." }
+
+        val a = abs((r * f * f * cosT / delta)).toFloat()              // horizontal semi-axis
+        val b = abs(r * f / sqrt(delta)).toFloat()                   // vertical semi-axis
+        val centerX = (-r * r * f * sinT * cosT / delta).toFloat()// horizontal center offset
+
+        return EllipseProjection(centerX, a, b)
     }
 
-    @Composable
-    private fun DetailsFace(score: Score) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Score Details", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Current: ${score.score}", color = Color.White)
-            Text("Max: ${score.maxScore}", color = Color.White)
-            Text("Progress: ${(score.percentage * 100).toInt()}%", color = Color.White)
-        }
-    }
 
-    @Composable
-    private fun InfoFace(score: Score) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("\uD83C\uDFAF", fontSize = 48.sp)
-            Text("3D Coin", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Text("Swipe to explore", color = Color.White.copy(alpha = 0.7f))
-        }
+    /**
+     * Compose-style projection of a rotated circle (uses Compose's simplified 4×4 matrix model).
+     *
+     * cameraDistancePx corresponds to the value you set in graphicsLayer.cameraDistance * density.
+     */
+    fun projectRotatedCircleCompose(
+        radius: Float,
+        thetaDeg: Float,
+        focalDistance: Float
+    ): EllipseProjection {
+        val theta = Math.toRadians(thetaDeg.toDouble())
+        val r = radius.toDouble()
+        val d = focalDistance.toDouble()
+
+        val sinT = sin(theta)
+        val cosT = cos(theta)
+        val k = r * sinT / d
+        require(abs(k) < 1.0) { "Degenerate: r*sin(theta)/d must be < 1" }
+
+        val a = (r * cosT / (1 - k * k)).toFloat()
+        val b = r.toFloat()
+        val centerX = (-r * r * sinT * cosT / (d * (1 - k * k))).toFloat()
+
+        return EllipseProjection(centerX, a, b)
     }
 
     override fun getType(): ComponentType = ComponentType.OPENGL_3D

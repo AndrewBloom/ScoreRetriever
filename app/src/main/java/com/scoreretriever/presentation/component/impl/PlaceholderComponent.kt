@@ -26,6 +26,7 @@ import com.scoreretriever.R
 import com.scoreretriever.domain.model.Score
 import com.scoreretriever.presentation.component.CoinLikeComponent
 import com.scoreretriever.presentation.component.ComponentType
+import dev.chrisbanes.haze.HazeState
 
 /**
  * Simple placeholder implementation of CoinLikeComponent for Phase 1.
@@ -49,7 +50,7 @@ import com.scoreretriever.presentation.component.ComponentType
 class PlaceholderComponent : CoinLikeComponent {
 
     @Composable
-    override fun Content(score: Score, modifier: Modifier) {
+    override fun Content(score: Score, modifier: Modifier, hazeState: HazeState) {
         Box(
             modifier = modifier.size(320.dp),
             contentAlignment = Alignment.Center

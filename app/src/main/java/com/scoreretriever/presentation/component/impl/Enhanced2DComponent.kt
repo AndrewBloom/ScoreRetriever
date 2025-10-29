@@ -1,58 +1,214 @@
 package com.scoreretriever.presentation.component.impl
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.scoreretriever.R
 import com.scoreretriever.domain.model.Score
 import com.scoreretriever.presentation.component.CoinLikeComponent
 import com.scoreretriever.presentation.component.ComponentType
+import com.scoreretriever.presentation.component.impl.enhanced2d.CircularInt
+import com.scoreretriever.presentation.component.impl.enhanced2d.CircularNumber
+import com.scoreretriever.presentation.component.impl.enhanced2d.DetailsFace
+import com.scoreretriever.presentation.component.impl.enhanced2d.InfoFace
+import com.scoreretriever.presentation.component.impl.enhanced2d.PagesIndicatorComponent
+import com.scoreretriever.presentation.component.impl.enhanced2d.PercentageFace
+import com.scoreretriever.presentation.component.impl.enhanced2d.ScoreFace
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.ceil
+import kotlin.math.cos
+import kotlin.math.floor
+import kotlin.math.sin
+
+/**
+ * Configuration parameters for the Enhanced2D coin component.
+ *
+ * This class provides a single source of truth for all visual and behavioral
+ * parameters of the coin component.
+ *
+ * @param coinRadius The radius of the coin (half of diameter)
+ * @param coinThickness The thickness of the coin edge
+ * @param coinSideColor The base color for the main coin faces
+ * @param coinRimColor The base color for the coin rim/edge
+ * @param containerSize The size of the interactive container around the coin
+ * @param cameraDistance The 3D camera distance for perspective (multiplied by density)
+ * @param dragSensitivity Factor to control how responsive drag gestures are (higher = less sensitive)
+ * @param perspectiveBeta Coefficient for 3D perspective shift calculation
+ * @param totalPages Number of virtual pages/faces the coin can display
+ * @param springDampingRatio Damping ratio for snap-back animations
+ * @param springStiffness Stiffness for snap-back animations
+ */
+data class CoinParameters(
+    val coinRadius: Dp = 133.dp,
+    val coinThickness: Dp = 60.dp,
+    val coinSideColor: Color = Color(0x20202020),
+    val coinRimColor: Color = Color(0x40202020),
+    val containerSize: Dp = 320.dp,
+    val cameraDistance: Float = 12f,
+    val dragSensitivity: Float = 5f,
+    val perspectiveBeta: Float = 0.1518f,
+    val totalPages: Int = 4,
+    val springDampingRatio: Float = Spring.DampingRatioMediumBouncy,
+    val springStiffness: Float = Spring.StiffnessMedium
+) {
+    /** Half of the coin thickness */
+    val halfThickness: Dp get() = coinThickness / 2
+
+    /** Diameter of the coin */
+    val coinDiameter: Dp get() = coinRadius * 2
+}
+
+/**
+ * Geometry calculator for coin transformations.
+ *
+ * This class encapsulates all geometric calculations based on the current rotation
+ * state, providing a single source of truth for derived values.
+ *
+ * @param rotation The current rotation state
+ * @param params The coin parameters
+ * @param density The display density for pixel conversions
+ */
+class CoinGeometry(
+    private val rotation: Animatable<Float, AnimationVector1D>,
+    private val params: CoinParameters,
+    private val density: Density
+) {
+    /** Current rotation angle in radians */
+    val rotationRadians: Double get() = Math.toRadians(rotation.value.toDouble())
+
+    /** Current rotation modulo 180 degrees */
+    val rotationMod180: Double get() = rotation.value.toDouble() % 180
+
+    /** Coin radius in pixels */
+    val radiusPixels: Float get() = params.coinRadius.value * density.density
+
+    /** Horizontal scale factor based on rotation (cosine of angle) */
+    val horizontalScale: Float get() = abs(cos(rotationRadians)).toFloat()
+
+    /**
+     * Mirror factor: returns 1f when past 90°, -1f otherwise.
+     * Used to flip the rim horizontally.
+     */
+    val mirrorFactor: Float get() {
+        val angle = ((rotation.value % 360f + 360f) % 360f) % 180f
+        return if (angle > 90f) 1f else -1f
+    }
+
+    /**
+     * Horizontal slide offset for coin faces during rotation.
+     * - 0° to 90°: slides from 0 to +halfThickness
+     * - At 90°: snaps to -halfThickness
+     * - 90° to 180°: slides from -halfThickness to 0
+     */
+    val slideOffset: Float get() {
+        val sinValue = sin(Math.toRadians(rotationMod180)).toFloat()
+        return if (abs(rotationMod180) < 90) {
+            // Before 90°: slide in direction of rotation
+            sinValue * params.halfThickness.value
+        } else {
+            // After 90°: flip to other side and slide back
+            -sinValue * params.halfThickness.value
+        }
+    }
+
+    /**
+     * Center shift for 3D perspective effect.
+     * This accounts for the visual displacement of the coin's center
+     * due to perspective projection.
+     */
+    val centerShift: Float get() {
+        return (params.perspectiveBeta * radiusPixels *
+                sin(rotationRadians) * cos(rotationRadians)).toFloat()
+    }
+
+    /**
+     * Center shift for rim (with mirror factor applied).
+     */
+    val rimCenterShift: Float get() {
+        return (-mirrorFactor * params.perspectiveBeta * radiusPixels *
+                sin(rotationRadians) * cos(rotationRadians)).toFloat()
+    }
+
+    /**
+     * Determines if the coin face should be flipped (past 90° rotation).
+     */
+    val shouldFlipContent: Boolean get() {
+        return (abs(rotation.value) + 90) % 360 > 180
+    }
+
+    /**
+     * Calculate the target snap rotation when drag ends.
+     * Snaps to the nearest 0° or 180° position.
+     */
+    fun calculateSnapTarget(currentRotation: Float): Float {
+        val rvMod = currentRotation % 180
+        return when {
+            rvMod > -90 && rvMod < 90 -> currentRotation - rvMod
+            rvMod < -90 -> currentRotation + (-180 - rvMod)
+            else -> currentRotation + (180 - rvMod)
+        }
+    }
+
+    /**
+     * Calculate which page should be displayed based on rotation angle.
+     */
+    fun getDisplayPage(currentPage: CircularNumber<Int>, angle: Float): CircularNumber<Int> {
+        return when {
+            angle > 90f -> {
+                CircularInt(currentPage.value + 1 + ((angle - 90) / 180).toInt(), currentPage.length)
+            }
+            angle < -90f -> {
+                CircularInt(currentPage.value - (1 + ((-angle - 90) / 180).toInt()), currentPage.length)
+            }
+            else -> currentPage
+        }
+    }
+}
 
 /**
  * Enhanced 2D component with glassmorphic blur effects using Haze library.
+ *
+ * This refactored version:
+ * - Centralizes all parameters in CoinParameters data class
+ * - Uses CoinGeometry for all geometric calculations (single source of truth)
+ * - Eliminates duplicated formulas
+ * - Makes the component more configurable and maintainable
  *
  * Features:
  * - Glassmorphic coin with blur effects on background image
@@ -64,372 +220,251 @@ import kotlin.math.abs
  * - Page indicator dots
  * - Toroidal navigation (wraps around from 4 to 1)
  */
-class Enhanced2DComponent : CoinLikeComponent {
+class Enhanced2DComponentRefactored(
+    private val params: CoinParameters = CoinParameters()
+) : CoinLikeComponent {
+    private val pagesIndicator = PagesIndicatorComponent(params.totalPages)
 
     @OptIn(ExperimentalHazeMaterialsApi::class)
     @Composable
-    override fun Content(score: Score, modifier: Modifier) {
-        val hazeState = remember { HazeState() }
-        var currentPage by remember { mutableIntStateOf(0) }
+    override fun Content(score: Score, modifier: Modifier, hazeState: HazeState) {
+        var currentPage by remember { mutableStateOf(CircularInt(0, params.totalPages)) }
         val rotation = remember { Animatable(0f) }
-        val scale = remember { Animatable(1f) }
         val scope = rememberCoroutineScope()
         var isAnimating by remember { mutableStateOf(false) }
 
         // Determine which page to show based on rotation angle
-        val displayPage = remember(currentPage, rotation.value) {
-            if (abs(rotation.value) > 90f) {
-                // Past 90 degrees, show the next/previous page
-                if (rotation.value > 0) {
-                    (currentPage - 1 + 4) % 4
-                } else {
-                    (currentPage + 1) % 4
-                }
-            } else {
-                currentPage
-            }
+        var displayPage by remember { mutableStateOf(currentPage) }
+
+        // Get current density
+        val density = androidx.compose.ui.platform.LocalDensity.current
+
+        // Create geometry calculator with current state
+        val geometry = remember(rotation.value) {
+            CoinGeometry(rotation, params, density)
         }
 
-        // Calculate edge visibility based on rotation angle
-        // Edge is most visible at 90°, invisible at 0° and 180°
-        val edgeVisibility = remember(rotation.value) {
-            val normalizedRotation = abs(rotation.value) % 180f
-            // Use sine wave: max at 90°, min at 0° and 180°
-            abs(kotlin.math.sin(Math.toRadians(normalizedRotation.toDouble()))).toFloat()
-        }
-
-        // Calculate edge width based on rotation angle
-        val edgeWidth = remember(rotation.value) {
-            // Max width of 20dp at 90°, scales down to near 0 at 0° and 180°
-            20.dp * edgeVisibility
-        }
-
-        Box(
-            modifier = modifier
-                .fillMaxSize(),
-            contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            // Background layer that will be blurred - mark it as haze source
+            // Container for coin - handles gestures but doesn't rotate
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .hazeSource(state = hazeState)
-            )
-
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                // The glassmorphic coin - entire coin rotates as one unit
-                Box(
-                    modifier = Modifier
-                        .size(320.dp)
-                        .pointerInput(Unit) {
-                            detectHorizontalDragGestures(
-                                onDragEnd = {
-                                    if (abs(rotation.value) > 90f && !isAnimating) {
-                                        // Complete the rotation to 180 degrees and switch page
-                                        isAnimating = true
-                                        scope.launch {
-                                            val targetRotation = if (rotation.value > 0) 180f else -180f
-                                            rotation.animateTo(
-                                                targetValue = targetRotation,
-                                                animationSpec = spring(
-                                                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                    stiffness = Spring.StiffnessMedium
-                                                )
-                                            )
-                                            // updates current page so that snapTo(0) has no effect
-                                            currentPage = if (rotation.value > 0) {
-                                                (currentPage - 1 + 4) % 4
-                                            } else {
-                                                (currentPage + 1) % 4
-                                            }
-//                                            // Reset rotation
-                                            rotation.snapTo(0f)
-//                                            scale.snapTo(1f)
-                                            isAnimating = false
-                                        }
-                                    } else {
-                                        // Snap back to original position
-                                        isAnimating = true
-                                        scope.launch {
-                                            rotation.animateTo(
-                                                targetValue = 0f,
-                                                animationSpec = spring(
-                                                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                    stiffness = Spring.StiffnessMedium
-                                                )
-                                            )
-                                            scale.animateTo(
-                                                targetValue = 1f,
-                                                animationSpec = spring(
-                                                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                    stiffness = Spring.StiffnessMedium
-                                                )
-                                            )
-                                            isAnimating = false
-                                        }
-                                    }
-                                }
-                            ) { change, dragAmount ->
+                    .size(params.containerSize)
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures(
+                            onDragEnd = {
                                 if (!isAnimating) {
-                                    change.consume()
-                                    // Update rotation based on drag (more responsive)
+                                    // Snap to closest value when dragging ends
+                                    isAnimating = true
                                     scope.launch {
-                                        val newRotation = (rotation.value + dragAmount / 5f).coerceIn(-180f, 180f)
-                                        rotation.snapTo(newRotation)
+                                        val targetRotation = geometry.calculateSnapTarget(rotation.value)
 
-                                        // Scale down slightly during rotation
-                                        //val scaleFactor = 1f - (abs(newRotation) / 180f) * 0.15f
-                                        //scale.snapTo(scaleFactor)
+                                        rotation.animateTo(
+                                            targetValue = targetRotation,
+                                            animationSpec = spring(
+                                                dampingRatio = params.springDampingRatio,
+                                                stiffness = params.springStiffness
+                                            )
+                                        )
+
+                                        // Reset rotation
+                                        currentPage = geometry.getDisplayPage(currentPage, rotation.value)
+                                        displayPage = currentPage
+                                        rotation.snapTo(0f)
+                                        isAnimating = false
                                     }
                                 }
                             }
+                        ) { change, dragAmount ->
+                            if (!isAnimating) {
+                                change.consume()
+                                // Update rotation based on drag
+                                scope.launch {
+                                    val newRotation = rotation.value + dragAmount / params.dragSensitivity
+                                    rotation.snapTo(newRotation)
+                                    displayPage = geometry.getDisplayPage(currentPage, newRotation)
+                                }
+                            }
                         }
-                        .graphicsLayer {
-                            // Both background and content rotate together
-                            // Set camera distance for proper 3D perspective
-                            cameraDistance = 12f * density
-                            rotationY = rotation.value
-                            scaleX = scale.value
-                            scaleY = scale.value
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    // Coin edge/thickness - visible at 90 degrees, scaled and faded based on rotation
-                    if (edgeWidth > 1.dp) {  // Only render if visible
-                        Box(
-                            modifier = Modifier
-                                .size(width = edgeWidth, height = 266.dp)
-                                .alpha(edgeVisibility)
-                                .background(
-                                    Color(0xFF303030),
-                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(edgeWidth / 2)
-                                )
-                        )
-                    }
-
-                    // Semi-transparent circular background with blur effect
-                    Box(
-                        modifier = Modifier
-                            .size(266.dp)
-                            .clip(CircleShape)
-                            .hazeEffect(state = hazeState)
-                            .background(Color(0x90202020))
-                    )
-
-                    // The coin content - show based on rotation angle
-                    Box(
-                        modifier = Modifier
-                            .size(266.dp)
-                            .graphicsLayer {
-                                // Flip content horizontally when past 90 degrees to appear correct
-                                cameraDistance = 12f * density
-                                rotationY = if (abs(rotation.value) > 90f) 180f else 0f
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        // Content based on current page
-                        CoinFaceContent(
-                            page = displayPage,
-                            score = score
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Page indicator dots
-                PageIndicator(
-                    totalPages = 4,
-                    currentPage = displayPage
-                )
-            }
-        }
-    }
-
-    @Composable
-    private fun CoinFaceContent(page: Int, score: Score) {
-        when (page) {
-            0 -> ScoreFace(score)
-            1 -> PercentageFace(score)
-            2 -> DetailsFace(score)
-            3 -> InfoFace(score)
-        }
-    }
-
-    @Composable
-    private fun ScoreFace(score: Score) {
-        Box(
-            modifier = Modifier.size(266.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            // Donut progress indicator
-            Canvas(modifier = Modifier.size(250.dp)) {
-                val strokeWidth = 12.dp.toPx()
-                val diameter = size.minDimension - strokeWidth
-
-                // Background circle (dark gray)
-                drawCircle(
-                    color = Color(0xFF505050),
-                    radius = diameter / 2,
-                    style = Stroke(width = strokeWidth)
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                // Coin side (main face)
+                Box(
+                    Modifier
+                        .size(width = params.coinRadius * 2 * geometry.horizontalScale,
+                              height = params.coinDiameter)
+                        .graphicsLayer { translationX = geometry.slideOffset - geometry.centerShift }
+                        .clip(CoinSideShape(geometry))
+                        .hazeEffect(state = hazeState, style = HazeMaterials.ultraThin())
+                        .background(params.coinSideColor)
                 )
 
-                // Progress arc (gold)
-                val sweepAngle = 360f * score.percentage
-                val startAngle = -90f // Start from top
-
-                drawArc(
-                    color = Color(0xFFFFB800),
-                    startAngle = startAngle,
-                    sweepAngle = sweepAngle,
-                    useCenter = false,
-                    topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
-                    size = Size(diameter, diameter),
-                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                )
-            }
-
-            // Center content
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = stringResource(R.string.score_label),
-                    fontSize = 16.sp,
-                    color = Color.White.copy(alpha = 0.9f)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = score.score.toString(),
-                    fontSize = 80.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFFFFB800)
-                )
-
-                Text(
-                    text = stringResource(id = R.string.out_of_max_score, score.maxScore),
-                    fontSize = 18.sp,
-                    color = Color.White.copy(alpha = 0.8f)
-                )
-            }
-        }
-    }
-
-    @Composable
-    private fun PercentageFace(score: Score) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "${(score.percentage * 100).toInt()}%",
-                fontSize = 72.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFFFFB800)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "ACHIEVEMENT",
-                fontSize = 16.sp,
-                color = Color.White.copy(alpha = 0.9f)
-            )
-        }
-    }
-
-    @Composable
-    private fun DetailsFace(score: Score) {
-        Column(
-            modifier = Modifier.padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "SCORE DETAILS",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            DetailRow("Current", score.score.toString())
-            Spacer(modifier = Modifier.height(12.dp))
-            DetailRow("Maximum", score.maxScore.toString())
-            Spacer(modifier = Modifier.height(12.dp))
-            DetailRow("Progress", "${(score.percentage * 100).toInt()}%")
-        }
-    }
-
-    @Composable
-    private fun DetailRow(label: String, value: String) {
-        Row(
-            modifier = Modifier.padding(vertical = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "$label:",
-                fontSize = 16.sp,
-                color = Color.White.copy(alpha = 0.7f),
-                modifier = Modifier.weight(1f)
-            )
-            Text(
-                text = value,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFFFFB800)
-            )
-        }
-    }
-
-    @Composable
-    private fun InfoFace(score: Score) {
-        Column(
-            modifier = Modifier.padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "\ud83c\udfaf",
-                fontSize = 64.sp
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "ENHANCED 2D",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Swipe to explore",
-                fontSize = 14.sp,
-                color = Color.White.copy(alpha = 0.7f)
-            )
-        }
-    }
-
-    @Composable
-    private fun PageIndicator(totalPages: Int, currentPage: Int) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            repeat(totalPages) { index ->
+                // The coin face content - rotates and slides horizontally
                 Box(
                     modifier = Modifier
-                        .size(if (index == currentPage) 12.dp else 8.dp)
-                        .background(
-                            color = if (index == currentPage) {
-                                Color(0xFFFFB800)
-                            } else {
-                                Color.White.copy(alpha = 0.3f)
-                            },
-                            shape = CircleShape
-                        )
+                        .size(params.coinDiameter)
+                        .graphicsLayer {
+                            cameraDistance = params.cameraDistance * density.density
+                            rotationY = rotation.value +
+                                if (geometry.shouldFlipContent) 180f else 0f
+                            translationX = geometry.slideOffset
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CoinFaceContent(
+                        radius = params.coinRadius,
+                        page = displayPage.value,
+                        score = score
+                    )
+                }
+
+                // Rim (edge of the coin)
+                Box(
+                    modifier = Modifier
+                        .size(params.coinDiameter, params.coinDiameter)
+                        .graphicsLayer {
+                            scaleX = geometry.mirrorFactor
+                            cameraDistance = params.cameraDistance * density.density
+                            translationX = geometry.slideOffset
+                        }
+                        .offset(params.coinRadius, 0.dp)
+                        .clip(RimShape(geometry))
+                        .hazeEffect(state = hazeState, style = HazeMaterials.ultraThin())
+                        .background(params.coinRimColor)
                 )
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Page indicator dots
+            pagesIndicator.Content(currentPage = displayPage.value)
+        }
+    }
+
+    @Composable
+    private fun CoinFaceContent(page: Int, score: Score, radius: Dp) {
+        when (page) {
+            0 -> ScoreFace(radius, score)
+            1 -> PercentageFace(radius, score)
+            2 -> DetailsFace(radius, score)
+            3 -> InfoFace(radius, score)
+        }
+    }
+
+    /**
+     * The Shape used to draw the coin surface. It mimics the transformation
+     * used by compose with RotationY. The Haze library for blurring does not work
+     * with rotationY, so we need to apply the transformation manually.
+     *
+     * This refactored version uses CoinGeometry as the single source of truth
+     * for all geometric calculations.
+     */
+    class CoinSideShape(
+        private val geometry: CoinGeometry
+    ) : Shape {
+        override fun createOutline(
+            size: Size,
+            layoutDirection: LayoutDirection,
+            density: Density
+        ): Outline {
+            val r = geometry.radiusPixels
+            val horizontalScale = geometry.horizontalScale
+
+            // Create oval representing the rotated coin face
+            val path = Path().apply {
+                val innerLeft = 0f
+                // Truncate with ceil and floor to reduce flickering
+                val innerRect = Rect(
+                    left = floor(innerLeft) - 0.5f,
+                    top = 0f,
+                    right = ceil(innerLeft + 2f * r * horizontalScale) + 0.5f,
+                    bottom = 2f * r
+                )
+                addOval(innerRect)
+            }
+
+            return Outline.Generic(path)
+        }
+    }
+
+    /**
+     * This class computes the rim shape of a coin, composed of a crescent shape.
+     *
+     * When a rotation around the Y-axis is applied, we see the coin's edge/thickness,
+     * which is limited on one side by the back face of the coin. This creates
+     * a crescent-shaped visible area.
+     *
+     * This refactored version uses CoinGeometry as the single source of truth.
+     */
+    class RimShape(
+        private val geometry: CoinGeometry
+    ) : Shape {
+        override fun createOutline(
+            size: Size,
+            layoutDirection: LayoutDirection,
+            density: Density
+        ): Outline {
+            val hso = abs(geometry.slideOffset * 2f)
+            val r = geometry.radiusPixels
+            val horizontalScale = geometry.horizontalScale
+            val centerShift = geometry.rimCenterShift
+
+            val crescentPath = Path().apply {
+                // Outer oval (visible edge of the coin)
+                val outerLeft = hso + centerShift - r * horizontalScale
+                val outerRect = Rect(
+                    left = ceil(outerLeft),
+                    top = 0f,
+                    right = floor(outerLeft + 2f * r * horizontalScale),
+                    bottom = 2f * r
+                )
+
+                // Inner oval (clipping boundary - back face)
+                val innerLeft = centerShift - r * horizontalScale
+                val innerRect = Rect(
+                    left = ceil(innerLeft) + 0.5f,
+                    top = 0f,
+                    right = floor(innerLeft + 2f * r * horizontalScale) - 0.5f,
+                    bottom = 2f * r
+                )
+
+                // Calculate center points
+                val outerTopX = (outerRect.left + outerRect.right) / 2f
+                val innerTopX = (innerRect.left + innerRect.right) / 2f
+
+                // Build the crescent path
+                moveTo(0f, 0f)
+                lineTo(outerTopX, 0f)
+
+                // Outer arc from top to bottom (right side)
+                arcTo(
+                    outerRect,
+                    startAngleDegrees = -90f,
+                    sweepAngleDegrees = 180f,
+                    forceMoveTo = false
+                )
+
+                // Bottom edge
+                lineTo(innerTopX, 2f * r)
+
+                // Inner arc from bottom to top (right side, backwards)
+                arcTo(
+                    innerRect,
+                    startAngleDegrees = 90f,
+                    sweepAngleDegrees = -180f,
+                    forceMoveTo = false
+                )
+
+                // Close back to start
+                lineTo(0f, 0f)
+                close()
+            }
+
+            return Outline.Generic(crescentPath)
         }
     }
 

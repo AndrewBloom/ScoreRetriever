@@ -3,6 +3,8 @@ package com.scoreretriever.presentation.component
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.scoreretriever.domain.model.Score
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 
 /**
  * Interface for different implementations of the score display component.
@@ -34,11 +36,6 @@ interface CoinLikeComponent {
      * @param score The score data to display
      * @param modifier Compose modifier for styling and layout (default = Modifier)
      */
-    @Composable
-    fun Content(
-        score: Score,
-        modifier: Modifier = Modifier
-    )
 
     /**
      * Returns the component type identifier.
@@ -48,4 +45,7 @@ interface CoinLikeComponent {
      * @return ComponentType enum value
      */
     fun getType(): ComponentType
+    @OptIn(ExperimentalHazeMaterialsApi::class)
+    @Composable
+    fun Content(score: Score, modifier: Modifier, hazeState: HazeState)
 }

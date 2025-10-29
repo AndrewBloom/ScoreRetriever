@@ -3,6 +3,7 @@ package com.scoreretriever.presentation.screen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -34,13 +36,16 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.scoreretriever.R
+import com.scoreretriever.domain.model.Score
 import com.scoreretriever.presentation.component.ComponentFactory
 import com.scoreretriever.presentation.component.ComponentType
 import com.scoreretriever.presentation.state.ScoreUiState
 import com.scoreretriever.presentation.viewmodel.ScoreViewModel
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
+import dev.chrisbanes.haze.rememberHazeState
 
 /**
  * Main screen for displaying score information.
@@ -70,6 +75,7 @@ fun ScoreScreen(
     // Collect UI state with lifecycle awareness
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedComponentType by viewModel.selectedComponentType.collectAsStateWithLifecycle()
+    val hazeState = rememberHazeState()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -108,7 +114,8 @@ fun ScoreScreen(
             Image(
                 painter = painterResource(id = R.drawable.selection),
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize()
+                    .hazeSource(hazeState), // Background participates in the haze field
                 contentScale = ContentScale.Crop,
             )
 
@@ -121,7 +128,8 @@ fun ScoreScreen(
                     val score = (uiState as ScoreUiState.Success).score
                     SuccessContent(
                         score = score,
-                        selectedComponentType = selectedComponentType
+                        selectedComponentType = selectedComponentType,
+                        hazeState
                     )
                 }
 
@@ -175,24 +183,16 @@ private fun LoadingContent() {
 @OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
 private fun SuccessContent(
-    score: com.scoreretriever.domain.model.Score,
-    selectedComponentType: ComponentType
+    score: Score,
+    selectedComponentType: ComponentType,
+    hazeState: HazeState
 ) {
-    val hazeState = remember { HazeState() }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .haze(hazeState), // Background participates in the haze field
+            .border(width = 3.dp, color = Color.White, shape = RectangleShape),
         contentAlignment = Alignment.Center
     ) {
-        // Background image (blur target)
-        Image(
-            painter = painterResource(id = R.drawable.selection),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop,
-        )
 
         // Create and display the selected component (blur foreground)
         val component = remember(selectedComponentType) {
@@ -201,8 +201,8 @@ private fun SuccessContent(
 
         component.Content(
             score = score,
-            modifier = Modifier
-                .haze(hazeState) // Foreground content applies the blur effect
+            modifier = Modifier,
+            hazeState = hazeState
         )
     }
 }
